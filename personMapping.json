@@ -1,0 +1,174 @@
+{
+    "personMappings": [
+        {
+            "name": "Contact.Business.Email",
+            "mode": "field",
+            "value": "BusinessEmail",
+            "validation": {
+                "required": false
+            }
+        },
+        {
+            "name": "Contact.Business.Phone.Fixed",
+            "mode": "field",
+            "value": "BusinessPhone",
+            "validation": {
+                "required": false
+            }
+        },
+        {
+            "name": "Contact.Business.Phone.Mobile",
+            "mode": "field",
+            "value": "MobilePhone",
+            "validation": {
+                "required": false
+            }
+        },
+        {
+            "name": "Contact.Personal.Email",
+            "mode": "field",
+            "value": "PrivateEmail",
+            "validation": {
+                "required": false
+            }
+        },
+        {
+            "name": "Details.Gender",
+            "mode": "field",
+            "value": "Gender",
+            "validation": {
+                "required": false
+            }
+        },
+        {
+            "name": "ExternalId",
+            "mode": "field",
+            "value": "ExternalId",
+            "validation": {
+                "required": true
+            }
+        },
+        {
+            "name": "Name.Convention",
+            "mode": "field",
+            "value": "Convention",
+            "validation": {
+                "required": false
+            }
+        },
+        {
+            "name": "Name.FamilyName",
+            "mode": "field",
+            "value": "LastName",
+            "validation": {
+                "required": false
+            }
+        },
+        {
+            "name": "Name.NickName",
+            "mode": "field",
+            "value": "FirstName",
+            "validation": {
+                "required": false
+            }
+        }
+    ],
+    "contractMappings": [
+        {
+            "name": "CostCenter.Code",
+            "mode": "field",
+            "value": "costCenter",
+            "validation": {
+                "required": false
+            }
+        },
+        {
+            "name": "Department.ExternalId",
+            "mode": "field",
+            "value": "department",
+            "validation": {
+                "required": false
+            }
+        },
+        {
+            "name": "Details.Sequence",
+            "mode": "field",
+            "value": "seqNumber",
+            "validation": {
+                "required": false
+            }
+        },
+        {
+            "name": "Division.Code",
+            "mode": "field",
+            "value": "division",
+            "validation": {
+                "required": false
+            }
+        },
+        {
+            "name": "EndDate",
+            "mode": "field",
+            "value": "employmentEndDate",
+            "validation": {
+                "required": false
+            }
+        },
+        {
+            "name": "ExternalId",
+            "mode": "field",
+            "value": "userId",
+            "validation": {
+                "required": false
+            }
+        },
+        {
+            "name": "Location.Code",
+            "mode": "field",
+            "value": "location",
+            "validation": {
+                "required": false
+            }
+        },
+        {
+            "name": "Organization.Code",
+            "mode": "field",
+            "value": "company",
+            "validation": {
+                "required": false
+            }
+        },
+        {
+            "name": "Organization.Name",
+            "mode": "field",
+            "value": "CompanyName",
+            "validation": {
+                "required": false
+            }
+        },
+        {
+            "name": "StartDate",
+            "mode": "field",
+            "value": "employmentStartDate.value",
+            "validation": {
+                "required": false
+            }
+        },
+        {
+            "name": "Title.ExternalId",
+            "mode": "field",
+            "value": "jobTitle",
+            "validation": {
+                "required": false
+            }
+        },
+        {
+            "name": "Title.Name",
+            "mode": "field",
+            "value": "jobTitle",
+            "validation": {
+                "required": false
+            }
+        }
+    ]
+}

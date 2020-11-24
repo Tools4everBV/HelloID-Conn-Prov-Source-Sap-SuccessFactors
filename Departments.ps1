@@ -12,10 +12,10 @@ function New-BasicBase64 {
     return ("Basic $encodedCreds")
 }
 
-function Get-SAPSuccessFactorsList{ 
+function Invoke-SAPSFRestMethod { 
     [CmdletBinding()]
     param (
-        [parameter(Mandatory = $true)]  
+        [parameter(Mandatory)]  
         [string]
         $Url,
      
@@ -23,21 +23,37 @@ function Get-SAPSuccessFactorsList{
         $Proxy,
 
         [System.Collections.Hashtable]
-        $headers
+        $headers,
+
+        [int]
+        $BatchSize = 250
     )
-    try {
-        $webResponse = Invoke-RestMethod -Uri  $Url -Method GET -ContentType "application/json"  -Headers $headers
-        if($webResponse.d.results.count -gt 0) {
-            $returnValue = $webResponse.d.results    
-        }else{
-            $returnValue = $webResponse.d
-        }
-      
-           
+    try {       
+        $offset = 0       
+        [System.Collections.Generic.List[PSCustomObject]]$returnValue = @() 
+        while ($returnValue.count -eq $offset) {    
+          
+            # Make sure function works with and wihtout query parameters in the Url
+            if ($Url.Contains("?")) {
+                $urlWithOffSet = $Url + "&`$skip=$offset&`$top=$BatchSize" 
+            } else {
+                $urlWithOffSet = $Url + "?`$skip=$offset&`$top=$BatchSize" 
+            }
+            
+            $rawResponse = Invoke-RestMethod -Uri $urlWithOffSet.ToString() -Method GET -ContentType "application/json" -Headers $headers
+
+            if ($rawResponse.d.results.count -gt 0) {
+                [System.Collections.Generic.List[PSCustomObject]]$partialResult = $rawResponse.d.results    
+            } else {
+                [System.Collections.Generic.List[PSCustomObject]]$partialResult = $rawResponse.d
+            }  
+            $returnValue.AddRange($partialResult)
+            $offset += $BatchSize
+        }             
     } catch {
-        
-            throw "Could not Get SAPSuccessFactorsList, message: $($_.Exception.Message)"
-      
+        $returnValue = [PSCustomObject]@{
+            Error = "Could not Get SAPSuccessFactorsList, message: $($_.Exception.Message)"
+        } 
     }
     return $returnValue
 }
@@ -58,12 +74,12 @@ $Headers = @{
     APIKey = $config.APIKey
     accept = "application/json"
 }	
-$url =  $config.url
+$url = $config.url.trim("/")
 
-$resultDeparments = Get-SAPSuccessFactorsList -Url "$url/FOBusinessUnit"  -Proxy  $proxy -headers  $headers
+$resultDeparments = Invoke-SAPSFRestMethod -Url "$url/FOBusinessUnit"  -headers  $headers
 
 
- $departments = $resultDeparments  | Select-Object @{n="ExternalId";e={$_.externalCode}}, @{n="Displayname";e={$_.description_en_US}}, name, headOfUnit
+$departments = $resultDeparments | Select-Object @{n = "ExternalId"; e = { $_.externalCode } }, @{n = "Displayname"; e = { $_.description_en_US } }, name, headOfUnit
 Write-Verbose -Verbose "Department import completed";
 
-Write-Output $departments | ConvertTo-Json
+Write-Output $departments | ConvertTo-Json -Depth 10

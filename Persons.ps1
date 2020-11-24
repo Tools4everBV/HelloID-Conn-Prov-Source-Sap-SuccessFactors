@@ -87,12 +87,6 @@ if ($config.UseUsernamePassword) {
 }
 $url = $config.url.trim("/")
 
-# $Headers = @{
-#     APIKey = "At33LVphXMBPtLGeDIWODjhsPwYpIeNQ"
-#     accept = "application/json"
-# }	
-# $url = "https://sandbox.api.sap.com/successfactors/odata/v2".trim("/")
-
 $InformationPreference = "continue"
 
 #region Person
@@ -159,43 +153,59 @@ $InformationPreference = "continue"
 ## Creating Person + contract Object For HelloID Incl Mappping 
 try {
     #Person Section
-    $persons = [System.Collections.Generic.List[PscustomObject]]::new()
-    foreach ($person in $resultPerPerson) {   # |Select-Object -first 100 
-        $id = $person.personIdExternal   #used between person endpoint 
-        $personObject = [PscustomObject]@{
-            ExternalId    = $id
-            PersonId      = $person.personId
-            DisplayName   = $personalGrouped[$id].firstName + " " + $personalGrouped[$id].lastName
-            FirstName     = $personalGrouped[$id].firstName
-            LastName      = $personalGrouped[$id].lastName
-            Initials      = $personalGrouped[$id].initials
-            BusinessEmail = ($PerEmailGrouped[$id] | Where-Object { $_.emailType -eq $emailLabels["Business"] }).emailAddress
-            PrivateEmail  = ($PerEmailGrouped[$id] | Where-Object { $_.PhoneType -eq $emailLabels["Personal"] }).emailAddress
-            BusinessPhone = ($PerPhoneGrouped[$id] | Where-Object { $_.PhoneType -eq $phoneLabels["Business"] }).phoneNumber  ## The telephone number can be split in multiply proprties (AreaCode, CountryCode, phoneNumber)
-            MobilePhone   = ($PerPhoneGrouped[$id] | Where-Object { $_.PhoneType -eq $phoneLabels["Home"] }).phoneNumber  ## The telephone number can be split in multiply proprties (AreaCode, CountryCode, phoneNumber)
-            CellPhone     = ($PerPhoneGrouped[$id] | Where-Object { $_.PhoneType -eq $phoneLabels["Cell"] }).phoneNumber  ## The telephone number can be split in multiply proprties (AreaCode, CountryCode, phoneNumber)
-            Convention    = "B";
-            Gender        = $personalGrouped[$id].gender
-            Contracts     = [System.Collections.Generic.List[PscustomObject]]::new()
-        }   
-       
-        #Contract Section
-        $contract = ($EmpEmploymentGrouped[$id] | Select-Object -First 1)
-        $additionalContractPropertiesHash = @{
-            CompanyName = $companyInfoGrouped[$contract.company].description_localized
-            # DivsionName = <Insert additional list to Map divsions > 
-        }        
-        $contract | Add-Member -NotePropertyMembers $additionalContractPropertiesHash        
+    $persons = [System.Collections.Generic.List[PscustomObject]]::new() 
+    foreach ($person in $resultPerPerson) {
+        try {      
+            $id = $person.personIdExternal   #used between person endpoint 
+            $personObject = [PscustomObject]@{
+                ExternalID    = $id
+                PersonId      = $person.personId
+                DisplayName   = $personalGrouped[$id].firstName + " " + $personalGrouped[$id].lastName
+                FirstName     = $personalGrouped[$id].firstName
+                LastName      = $personalGrouped[$id].lastName
+                Initials      = $personalGrouped[$id].initials
+                BusinessEmail = ($PerEmailGrouped[$id] | Where-Object { $_.emailType -eq $emailLabels["Business"] }).emailAddress
+                PrivateEmail  = ($PerEmailGrouped[$id] | Where-Object { $_.PhoneType -eq $emailLabels["Personal"] }).emailAddress
+                BusinessPhone = ($PerPhoneGrouped[$id] | Where-Object { $_.PhoneType -eq $phoneLabels["Business"] }).phoneNumber  ## The telephone number can be split in multiply proprties (AreaCode, CountryCode, phoneNumber)
+                MobilePhone   = ($PerPhoneGrouped[$id] | Where-Object { $_.PhoneType -eq $phoneLabels["Home"] }).phoneNumber  ## The telephone number can be split in multiply proprties (AreaCode, CountryCode, phoneNumber)
+                CellPhone     = ($PerPhoneGrouped[$id] | Where-Object { $_.PhoneType -eq $phoneLabels["Cell"] }).phoneNumber  ## The telephone number can be split in multiply proprties (AreaCode, CountryCode, phoneNumber)
+                Convention    = "B";
+                Gender        = $personalGrouped[$id].gender
+                Contracts     = [System.Collections.Generic.List[PscustomObject]]::new()
+            }
 
-        $personObject.Contracts.Add($contract)  # always one item in the array
-        $persons.Add($personObject)
+            #Contract Section  TODO Beautify Contract mapping   
+            $contract = $null
+            $contract = $EmpEmploymentGrouped[$id]
+            if ($null -ne $contract -and $contract.count -gt 1) {
+                
+                foreach ($c in $contract) {
+                    if (-not [string]::IsNullOrEmpty($c.company)) {
+                        $additionalContractPropertiesHash = @{
+                            CompanyName = $companyInfoGrouped[$c.company].description_localized                                           
+                        }   
+                        $c | Add-Member -NotePropertyMembers $additionalContractPropertiesHash   
+                    }     
+                    $personObject.Contracts.Add($c)
+                }              
+            } elseif ($null -ne $contract) {
+                if (-not [string]::IsNullOrEmpty($contract.company)) {
+                    $additionalContractPropertiesHash = @{
+                        CompanyName = $companyInfoGrouped[$contract.company].description_localized                                        
+                    }   
+                    $contract | Add-Member -NotePropertyMembers $additionalContractPropertiesHash                
+                }     
+                $personObject.Contracts.Add($contract)
+            }
+            $persons.Add($personObject)
+        } catch {
+            $_.exception.message
+        }
     }
 } catch {
     $_.exception.message
-} 
+}
 #endregion HelloID
-
-
 
 foreach ($person in $persons) {
     Write-Output $person | ConvertTo-json -Depth 10
