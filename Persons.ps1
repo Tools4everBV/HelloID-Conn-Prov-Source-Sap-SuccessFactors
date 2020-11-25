@@ -1,7 +1,7 @@
 #####################################################
 # HelloID-Conn-Prov-SOURCE-SAP-SuccessFactors-Persons
 # 
-# Version: 1.0.0
+# Version: 1.0.1
 #####################################################
 function New-BasicBase64 {
     [CmdletBinding()]
@@ -14,7 +14,7 @@ function New-BasicBase64 {
     )
     $pair = "$($UserName):$($plainPassword)"
     $encodedCreds = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes($pair))
-    return ("Basic $encodedCreds")
+    Write-Output ("Basic $encodedCreds")
 }
 
 function Invoke-SAPSFRestMethod { 
@@ -35,10 +35,10 @@ function Invoke-SAPSFRestMethod {
     )
     try {       
         $offset = 0       
-        [System.Collections.Generic.List[PSCustomObject]]$returnValue = @() 
+        [System.Collections.Generic.List[Object]]$returnValue = @() 
         while ($returnValue.count -eq $offset) {    
           
-            # Make sure function works with and wihtout query parameters in the Url
+            #Make sure function works with and wihtout query parameters in the Url
             if ($Url.Contains("?")) {
                 $urlWithOffSet = $Url + "&`$skip=$offset&`$top=$BatchSize" 
             } else {
@@ -48,20 +48,18 @@ function Invoke-SAPSFRestMethod {
             $rawResponse = Invoke-RestMethod -Uri $urlWithOffSet.ToString() -Method GET -ContentType "application/json" -Headers $headers
 
             if ($rawResponse.d.results.count -gt 0) {
-                [System.Collections.Generic.List[PSCustomObject]]$partialResult = $rawResponse.d.results    
+                $returnValue.AddRange([System.Collections.Generic.List[PSCustomObject]]$rawResponse.d.results)    
             } else {
-                [System.Collections.Generic.List[PSCustomObject]]$partialResult = $rawResponse.d
-            }  
-            $returnValue.AddRange($partialResult)
+                $returnValue.AddRange([System.Collections.Generic.List[PSCustomObject]]$rawResponse.d)
+            }   
             $offset += $BatchSize
         }             
     } catch {
-        $returnValue = [PSCustomObject]@{
-            Error = "Could not Get SAPSuccessFactorsList, message: $($_.Exception.Message)"
-        } 
+        throw "Could not Invoke-SAPSFRestMethod with url: '$Url', message: $($_.Exception.Message)"
     }
-    return $returnValue
+    Write-Output $returnValue
 }
+
 function Format-PickListLabel($ResultLabels) {
     $labelList = @{ }
     foreach ($label in $resultLabels.picklistOptions.results) {
@@ -69,7 +67,7 @@ function Format-PickListLabel($ResultLabels) {
             ($label.picklistLabels.results | Where-Object { $_.locale -eq "en_US" }).label = $label.id  
         } 
     }
-    return $labelList
+    Write-Output $labelList
 }
 
 # Configuration
@@ -89,6 +87,7 @@ $url = $config.url.trim("/")
 
 $InformationPreference = "continue"
 
+try {
 #region Person
     $resultPerPerson = Invoke-SAPSFRestMethod -Url "$url/PerPerson"   -headers  $headers
     $resultPerPersonal = Invoke-SAPSFRestMethod -Url "$url/PerPersonal"  -headers  $headers
@@ -109,8 +108,8 @@ $InformationPreference = "continue"
     $resultEmpEmployment = Invoke-SAPSFRestMethod -Url "$url/EmpEmployment"  -headers  $headers
     $resultEmpJob = Invoke-SAPSFRestMethod -Url "$url/EmpJob" -headers  $headers
     
-    # Select only the meaning full properties of the raw result  (To decreacse the size of the objects)
-    $resultEmpEmployment = $resultEmpEmployment | Select-Object personIdExternal , userId, @{name = "employmentStartDate"; e = { $_.startDate } }, @{name = "employmentEndDate"; e = { $_.endDate } }
+    # Select only the meaningfull properties of the raw result  (To decreacse the size of the objects)
+    $resultEmpEmployment = $resultEmpEmployment | Select-Object personIdExternal , userId, @{name = "employmentStartDate"; expression = { $_.startDate } }, @{name = "employmentEndDate"; expression = { $_.endDate } }
     $resultEmpJob = $resultEmpJob | Select-Object userId, startDate, endDate, Jobcode, department, division, costCenter, emplStatus, countryOfCompany, ManagerID, businessUnit, jobTitle, standaardHours, position, company, location, seqNumber
     $EmpJobGrouped = $resultEmpJob | Group-Object -Property UserID -AsHashTable
 
@@ -148,17 +147,20 @@ $InformationPreference = "continue"
     $companyInfo = Invoke-SAPSFRestMethod -Url "$url/FOCompany" -headers  $headers
     $companyInfoGrouped = $companyInfo | Group-Object -Property "externalCode" -AsHashTable
 #endregion Additional Lists
+} catch {
+    Write-Error  ($_.exception.message)
+}
 
-#region HelloID
-## Creating Person + contract Object For HelloID Incl Mappping 
 try {
+#region HelloID
+    ## Creating Person + contract Object For HelloID Incl Mappping 
     #Person Section
     $persons = [System.Collections.Generic.List[PscustomObject]]::new() 
     foreach ($person in $resultPerPerson) {
         try {      
             $id = $person.personIdExternal   #used between person endpoint 
             $personObject = [PscustomObject]@{
-                ExternalID    = $id
+                ExternalId    = $id
                 PersonId      = $person.personId
                 DisplayName   = $personalGrouped[$id].firstName + " " + $personalGrouped[$id].lastName
                 FirstName     = $personalGrouped[$id].firstName
@@ -174,36 +176,24 @@ try {
                 Contracts     = [System.Collections.Generic.List[PscustomObject]]::new()
             }
 
-            #Contract Section  TODO Beautify Contract mapping   
-            $contract = $null
-            $contract = $EmpEmploymentGrouped[$id]
-            if ($null -ne $contract -and $contract.count -gt 1) {
-                
-                foreach ($c in $contract) {
+            #Contract Section 
+            [array]$contracts = $null
+            [array]$contracts = $EmpEmploymentGrouped[$id]
+            if ($contracts.count -gt 0) {
+                foreach ($c in $contracts) {
                     if (-not [string]::IsNullOrEmpty($c.company)) {
-                        $additionalContractPropertiesHash = @{
-                            CompanyName = $companyInfoGrouped[$c.company].description_localized                                           
-                        }   
-                        $c | Add-Member -NotePropertyMembers $additionalContractPropertiesHash   
-                    }     
+                        $c | Add-Member -MemberType NoteProperty -Name "CompanyName" -Value $companyInfoGrouped[$c.company].description_localized
+                    }
                     $personObject.Contracts.Add($c)
-                }              
-            } elseif ($null -ne $contract) {
-                if (-not [string]::IsNullOrEmpty($contract.company)) {
-                    $additionalContractPropertiesHash = @{
-                        CompanyName = $companyInfoGrouped[$contract.company].description_localized                                        
-                    }   
-                    $contract | Add-Member -NotePropertyMembers $additionalContractPropertiesHash                
-                }     
-                $personObject.Contracts.Add($contract)
-            }
+                }    
+            }        
             $persons.Add($personObject)
         } catch {
-            $_.exception.message
+            Write-Warning ($_.exception.message)
         }
     }
 } catch {
-    $_.exception.message
+    Write-Error ($_.exception.message)
 }
 #endregion HelloID
 

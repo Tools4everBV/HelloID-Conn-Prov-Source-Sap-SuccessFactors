@@ -12,6 +12,7 @@ function New-BasicBase64 {
     return ("Basic $encodedCreds")
 }
 
+
 function Invoke-SAPSFRestMethod { 
     [CmdletBinding()]
     param (
@@ -33,7 +34,7 @@ function Invoke-SAPSFRestMethod {
         [System.Collections.Generic.List[PSCustomObject]]$returnValue = @() 
         while ($returnValue.count -eq $offset) {    
           
-            # Make sure function works with and wihtout query parameters in the Url
+            #Make sure function works with and wihtout query parameters in the Url
             if ($Url.Contains("?")) {
                 $urlWithOffSet = $Url + "&`$skip=$offset&`$top=$BatchSize" 
             } else {
@@ -43,29 +44,16 @@ function Invoke-SAPSFRestMethod {
             $rawResponse = Invoke-RestMethod -Uri $urlWithOffSet.ToString() -Method GET -ContentType "application/json" -Headers $headers
 
             if ($rawResponse.d.results.count -gt 0) {
-                [System.Collections.Generic.List[PSCustomObject]]$partialResult = $rawResponse.d.results    
+                $returnValue.AddRange([System.Collections.Generic.List[PSCustomObject]]$rawResponse.d.results)    
             } else {
-                [System.Collections.Generic.List[PSCustomObject]]$partialResult = $rawResponse.d
-            }  
-            $returnValue.AddRange($partialResult)
+                $returnValue.AddRange([System.Collections.Generic.List[PSCustomObject]]$rawResponse.d)
+            }   
             $offset += $BatchSize
         }             
     } catch {
-        $returnValue = [PSCustomObject]@{
-            Error = "Could not Get SAPSuccessFactorsList, message: $($_.Exception.Message)"
-        } 
+        throw "Could not Invoke-SAPSFRestMethod with url: '$Url', message: $($_.Exception.Message)"
     }
-    return $returnValue
-}
-
-function Format-PickListLabel($ResultLabels) {
-    $labelList = @{ }
-    foreach ($label in $resultLabels.picklistOptions.results) {
-        $labelList += @{
-            ($label.picklistLabels.results | where { $_.locale -eq "en_US" }).label = $label.id  
-        } 
-    }
-    return $labelList
+    Write-Output $returnValue
 }
 
 #Tools4ever environment
@@ -74,7 +62,9 @@ $Headers = @{
     APIKey = $config.APIKey
     accept = "application/json"
 }	
-$url = $config.url.trim("/")
+$url = $config.url
+
+
 
 $resultDeparments = Invoke-SAPSFRestMethod -Url "$url/FOBusinessUnit"  -headers  $headers
 
