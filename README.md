@@ -1,4 +1,4 @@
-![image](SAP-SuccessFactors.png)
+![image](.\assets\SAP-SuccessFactors.png)
 ### Note!  This connector is a work in progress
 
 
