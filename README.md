@@ -38,6 +38,7 @@ Sap Successfactors operates with multiply endpoints which combined get a full He
     - [ ] Salutation (MRS , MR , e.g.)
 
  - [ ] Adding *AsOfDate* to the PerPersonal and EmpJob endpoint to retrieve personal or Job details for future employees.
+ - [ ] Rate limiting API Calls ? https://blogs.sap.com/2017/08/11/sap-api-management-rate-limiting-api-calls-per-application/
 
 ---
 
