@@ -55,7 +55,10 @@ function Invoke-SAPSFRestMethod {
             $offset += $BatchSize
         }             
     } catch {
-        throw "Could not Invoke-SAPSFRestMethod with url: '$Url', message: $($_.Exception.Message)"
+        if ($_.ErrorDetails) {
+            $errorExceptionDetails = $_.ErrorDetails
+        }
+        throw "Could not Invoke-SAPSFRestMethod with url: '$Url', message: $($_.Exception.Message), $errorExceptionDetails".Trim(" ")        
     }
     Write-Output $returnValue
 }
@@ -153,7 +156,7 @@ try {
 
 #endregion Additional Lists
 } catch {
-    Write-Error  ($_.exception.message)
+    throw ($_.exception.message)
 }
 
 try {
@@ -203,7 +206,7 @@ try {
         }
     }
 } catch {
-    Write-Error ($_.exception.message)
+    throw ($_.exception.message)
 }
 #endregion HelloID
 
