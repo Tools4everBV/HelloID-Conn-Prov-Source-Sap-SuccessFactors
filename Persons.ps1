@@ -1,7 +1,7 @@
 #####################################################
 # HelloID-Conn-Prov-SOURCE-SAP-SuccessFactors-Persons
 # 
-# Version: 1.0.1
+# Version: 1.0.2
 #####################################################
 function New-BasicBase64 {
     [CmdletBinding()]
@@ -146,6 +146,11 @@ try {
     ## CompnayInfo
     $companyInfo = Invoke-SAPSFRestMethod -Url "$url/FOCompany" -headers  $headers
     $companyInfoGrouped = $companyInfo | Group-Object -Property "externalCode" -AsHashTable
+  
+    ## CostCenterInfo
+    $costCenter = Invoke-SAPSFRestMethod -Url "$url/FOCostCenter" -headers  $headers
+    $costCenterGrouped = $costCenter | Group-Object -Property "externalCode" -AsHashTable
+
 #endregion Additional Lists
 } catch {
     Write-Error  ($_.exception.message)
@@ -184,7 +189,12 @@ try {
                     if (-not [string]::IsNullOrEmpty($c.company)) {
                         $c | Add-Member -MemberType NoteProperty -Name "CompanyName" -Value $companyInfoGrouped[$c.company].description_localized
                     }
+
+                    if (-not [string]::IsNullOrEmpty($c.costCenter)) {                    
+                        $c | Add-Member -MemberType NoteProperty -Name "CostCenterName" -Value $costCenterGrouped[$c.costCenter].description_localized
+                    }
                     $personObject.Contracts.Add($c)
+
                 }    
             }        
             $persons.Add($personObject)

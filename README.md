@@ -25,14 +25,14 @@ Sap Successfactors operates with multiply endpoints which combined get a full He
 ## Todo
 
   - [ ] Adding Additional List to translate or map the codes in the contracts to a meaningful display name
-   - [ ] Division
-   - [ ] CostCenter
-   - [ ] EmplStatus
-   - [ ] BusinessUnit
-   - [ ] Position
-   - [x] Company
-   - [ ] Location   
-   - [X] Department   *(Deparments.ps1)*
+    - [ ] Division
+    - [x] CostCenter
+    - [ ] EmplStatus
+    - [ ] BusinessUnit
+    - [ ] Position
+    - [x] Company
+    - [ ] Location   
+    - [X] Department   *(Deparments.ps1)*
 
 - [ ] Adding Additional List to translate or map the codes in the Person Object to a meaningful display name 
     - [ ] Salutation (MRS , MR , e.g.)
@@ -62,7 +62,7 @@ Sap Successfactors operates with multiply endpoints which combined get a full He
 
 ### Prerequisites
 
- - UserName and password Or a API key to access Authorizate with the SAP-SuccessFactors Webservice
+ - [ ] UserName and password or an API key to authenticate with SAP-SuccessFactors Webservice
 
 
 
