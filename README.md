@@ -1,5 +1,4 @@
 ![image](.\assets\SAP-SuccessFactors.png)
-### Note!  This connector is a work in progress
 
 
 ## Table of contents
@@ -25,13 +24,13 @@ Sap Successfactors operates with multiply endpoints which combined get a full He
 ## Todo
 
   - [ ] Adding Additional List to translate or map the codes in the contracts to a meaningful display name
-    - [ ] Division
+    - [X] Division
     - [x] CostCenter
     - [ ] EmplStatus
-    - [ ] BusinessUnit
+    - [X] BusinessUnit
     - [ ] Position
     - [x] Company
-    - [ ] Location   
+    - [X] Location   
     - [X] Department   *(Deparments.ps1)*
 
 - [ ] Adding Additional List to translate or map the codes in the Person Object to a meaningful display name 
@@ -54,8 +53,10 @@ Sap Successfactors operates with multiply endpoints which combined get a full He
 - /Picklist('ecPhoneType')
 - /FOCompany
 - /FODepartments *(Deparments.ps1)*
-
-
+- /FOLocation
+- /FODivision
+- /FODepartment
+- /FOBusinessUnit
 
 ---
 
