@@ -72,5 +72,5 @@ Sap Successfactors operates with multiply endpoints which combined get a full He
   You must fill the Webservice URL of the SAP SuccessFactors, with differs for each customer Example: https://sandbox.api.sap.com/successfactors/odata/v2
   The way you authenticate to the web service depends on your implementation, some environments require a username and password while others accept only an API-Key. The connector now supports both. To use "Username and Password" you must use the enable the toggle: *Use Username and Password*
 
-
-
+# HelloID Docs
+The official HelloID documentation can be found at: https://docs.helloid.com/
